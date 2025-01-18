@@ -9,7 +9,9 @@ import sys
 import os
 
 # Funkcje pomocnicze
-def pobieranie_z_pliku(param1):
+
+# Wyciagniecie danych z plikow
+def open_file(param1):
     filepath = "/home/vboxuser/Desktop/Licencjat/3x21_idxstats/" + param1
     try:
         data = []
@@ -31,31 +33,32 @@ def pobieranie_z_pliku(param1):
         print("Podano niepoprawne dane wejściowe.")
 
 
-
+#Obliczanie odchylenia standardowego
 def standard_dev(col3):
     if not col3:
         raise ValueError("Lista danych nie może być pusta.")
     
-        # Oblicz średnią
-    
+    # Oblicz średnią
     srednia = sum(col3) / len(col3)
     
-    # Oblicz wariancję (średnia kwadratów odchyleń od średniej)
+    # Oblicz wariancję
     wariancja = sum((x - srednia) ** 2 for x in col3) / len(col3)
     
-    # Odchylenie standardowe to pierwiastek z wariancji
+    # Odchylenie standardowe
     odchylenie_standardowe = round (wariancja ** 0.5,5)
     
     return odchylenie_standardowe
 
+
+#Obliczenie Sredniej
 def average(col3):
     if not col3:
         raise ValueError("Lista danych nie może być pusta.")
     
-        # Oblicz średnią
-    
+    # Oblicz średnią
     srednia = sum(col3) / len(col3)
     return round(srednia,5)
+
 
 def is_within_range(chrom_value,value, mean, std_dev, data, k=1):
     """
@@ -75,7 +78,7 @@ def is_within_range(chrom_value,value, mean, std_dev, data, k=1):
     
     
     counter = 0
-    decision = 0
+    decision = 0 #Decyzja czy wykazuje pokrycie nizsze/wyzsze od zalozonego
     col_4 = [] 
     for i in value:
         if i >= lower_bound and i <= upper_bound:
@@ -100,18 +103,17 @@ def is_within_range(chrom_value,value, mean, std_dev, data, k=1):
     return col_4
     
     
-    
-
+#Generowanie pliku koncowego    
 def output_file_alg1(data,filename,standardd,decision):
     counter = 0
-    file = filename
-    description = ["Numer chromosomu: ", "Dlugosc chromosomu referyncyjneg: ", "Dopasowane: ", "Stopien pokrycia [%]: ", "Decyzja: "]
+    file = filename[:-4]
+    description = ["Numer chromosomu: ", "Dlugosc chromosomu referyncyjneg: ", "Liczba odczytow: ", "Srednie pokrycie [%]: ", "Decyzja: "]
     for row in data:
         row.append(decision[counter])
         counter = counter + 1
 
     
-    with open("/home/vboxuser/Desktop/Licencjat/output/output_" + str(file) + ".csv", "w") as plik:
+    with open("/home/vboxuser/Desktop/Licencjat/output_1/output_" + str(file) + ".csv", "w") as plik:
         for item in description:
             plik.write(str(item)+"\t")
         
@@ -127,41 +129,39 @@ def output_file_alg1(data,filename,standardd,decision):
     print("Plik zostal zapisany")
 
 
-
+# Algorytm wywolujacy pozostale funkcje
 def alg1(data,filename):
-
-    column_3 = []
+    """
+    Zmienna column_*  przechowuja dane potrzebne do pozniejszego oznaczenia czy pokrycie danego chromosomu znajduje sie w zakresie
+    """
+    column_3 = [] 
     column_1 = []
     for row in data:
-        coverage= round(float(row[2])/float(row[1])*100,3)
-        #print("Pokrycie:"+ str(coverage))
-        #row[3]=coverage
-        row.insert(3,coverage)
+        coverage= round(float(row[2])/float(row[1])*100,3) # Srednie pokrycie
+        row.insert(3,coverage) # Dodanie pokrycia do odpowiedniego wiersza z danymi
         row.pop(4)
         print(row)
-        column_3.append(row[3])
+        column_3.append(row[3]) 
         column_1.append(row[0])
         
-    #print(column_3)    
     srednia = average(column_3)
     print("Srednia arytmetyczna: " + str(srednia))
     standardd= standard_dev(column_3)
-    print("Odchylenie standardowe: "+ str(standardd))
-    output_file_alg1(data,filename, standardd, is_within_range(column_1, column_3, srednia, standardd, data))
+    print("Odchylenie standardowe: "+ str(standardd)) #Kontrolne wypisane wyniku w konsoli
+    output_file_alg1(data,filename, standardd, is_within_range(column_1, column_3, srednia, standardd, data)) # Wywolanie zapisu wyniku do pliku
     
     
-
     
 # Główna funkcja programu
 def main(): 
     """
     Główna funkcja programu, która obsługuje logikę działania skryptu.
     """
-    # Sprawdzenie, czy skrypt jest uruchamiany jako główny
+    # Uruchomienie algorytmu nr.1
     for f in sys.argv[1:]:
         print(f"Przetwarzam plik: {f}")
         if len(f) > 1:
-            file = pobieranie_z_pliku(f)
+            file = open_file(f)
             alg1(file,f)
  
         else:
